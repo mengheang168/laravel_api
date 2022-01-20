@@ -7,6 +7,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
@@ -15,9 +16,13 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    public function __construct(){
+        $this->middleware('auth:api')->except('index','show');
+    }
+
     public function index()
     {
-        return Product::all();
+        return ProductCollection::collection(Product::paginate(20));
     }
 
     /**
@@ -38,7 +43,16 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        //
+        $product=new Product;
+        $product->name=$request->name;
+        $product->details=$request->description;
+        $product->price=$request->price;
+        $product->stock=$request->stock;
+        $product->discount=$request->discount;
+        $product->save();
+        return response([
+           'data'=>new  ProductResource($product)
+        ],Response::HTTP_CREATED);
     }
 
     /**
@@ -72,7 +86,16 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
-        //
+        $request['details']=$request->description;
+        unset($request['description']);
+        $product->update($request->all());
+        return Response([
+           'data'=>new ProductResource($product)
+        ],Response::HTTP_CREATED);
+
+
+
+
     }
 
     /**
